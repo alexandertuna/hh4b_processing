@@ -14,6 +14,10 @@ import subprocess
 import sys
 import time
 
+from goodruns import GRL
+grl = GRL(os.path.join("https://atlasdqm.web.cern.ch/atlasdqm/grlgen/All_Good",
+                       "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml"))
+
 dphi = lambda phi1, phi2 : abs(math.fmod((math.fmod(phi1, 2*math.pi) - math.fmod(phi2, 2*math.pi)) + 3*math.pi, 2*math.pi) - math.pi)
 dR   = lambda eta1, phi1, eta2, phi2: math.sqrt((eta1 - eta2)**2 + dphi(phi1, phi2)**2)
 GeV  = 1000.0
@@ -27,10 +31,10 @@ def main():
 
     ops = options()
 
-    if not ops.input:                     fatal("Please give a path to --input files for processing")
-    if not ops.output:                    fatal("Please give a path to a --output directory to write to.")
-    if not ops.filesperjob:               fatal("Please give number of --filesperjob")
-    if not ops.selection:                 fatal("Please give --selection for histogramming")
+    if not ops.input:       fatal("Please give a path to --input files for processing")
+    if not ops.output:      fatal("Please give a path to a --output directory to write to.")
+    if not ops.filesperjob: fatal("Please give number of --filesperjob")
+    if not ops.selection:   fatal("Please give --selection for histogramming")
 
     input_files = configure_input(ops.input)
 
@@ -72,6 +76,9 @@ def hist(config):
     tree.SetBranchStatus("lepTopJets_*",     0)
     print
 
+    # is this data?
+    isdata = not hasattr(tree, "mcEventWeight")
+
     # initialize
     start_time = time.time()
     hists = initialize_histograms()
@@ -83,6 +90,11 @@ def hist(config):
         tree.GetEntry(ient)
         if ient and ient % 1000 == 0:
             progress(start_time, ient, entries)
+
+        if isdata and (tree.runNumber, tree.lumiBlock) not in grl:
+            continue
+        if not "HLT_j360_a10r_L1J100" in tree.passedTriggers:
+            continue
 
         weight = event_weight(tree)
 
