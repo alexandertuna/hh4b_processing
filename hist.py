@@ -31,7 +31,6 @@ def main():
     if not ops.output:                    fatal("Please give a path to a --output directory to write to.")
     if not ops.filesperjob:               fatal("Please give number of --filesperjob")
     if not ops.selection:                 fatal("Please give --selection for histogramming")
-    # if not os.path.isfile(ops.selection): fatal("--selection file does not exist")
 
     input_files = configure_input(ops.input)
 
@@ -92,11 +91,11 @@ def hist(config):
         if tags77_leadjet < 2 and tags77_subljet < 2:
             continue
 
-        tags85_leadjet = count_tags(tree, jet=0, wp=85)
-        tags85_subljet = count_tags(tree, jet=1, wp=85)
-
         tags90_leadjet = count_tags(tree, jet=0, wp=90)
         tags90_subljet = count_tags(tree, jet=1, wp=90)
+
+        tags97_leadjet = count_tags(tree, jet=0, wp=97)
+        tags97_subljet = count_tags(tree, jet=1, wp=97)
 
         jet0 = ROOT.TLorentzVector()
         jet1 = ROOT.TLorentzVector()
@@ -107,6 +106,11 @@ def hist(config):
         jet_ak2_01_eta, jet_ak2_01_phi = tree.jet_ak2track_asso_eta[0][1], tree.jet_ak2track_asso_phi[0][1]
         jet_ak2_10_eta, jet_ak2_10_phi = tree.jet_ak2track_asso_eta[1][0], tree.jet_ak2track_asso_phi[1][0]
         jet_ak2_11_eta, jet_ak2_11_phi = tree.jet_ak2track_asso_eta[1][1], tree.jet_ak2track_asso_phi[1][1]
+
+        jet_ak2_00_mv2 = tree.jet_ak2track_asso_MV2c20[0][0]
+        jet_ak2_01_mv2 = tree.jet_ak2track_asso_MV2c20[0][1]
+        jet_ak2_10_mv2 = tree.jet_ak2track_asso_MV2c20[1][0]
+        jet_ak2_11_mv2 = tree.jet_ak2track_asso_MV2c20[1][1]
         
         for imu in xrange(tree.nmuon):
 
@@ -145,10 +149,12 @@ def hist(config):
         if "2tag77lead" in selection and tags77_leadjet                != 2: accept = False
         if "2tag77subl" in selection and tags77_subljet                != 2: accept = False
 
-        if  "3tag77"     in selection and tags77_leadjet+tags77_subljet != 3: accept = False
-        if  "4tag77"     in selection and tags77_leadjet+tags77_subljet != 4: accept = False
-        if  "4tag90"     in selection and tags90_leadjet+tags90_subljet != 4: accept = False
-        if "N4tag90"     in selection and tags90_leadjet+tags90_subljet == 4: accept = False
+        if  "3tag77"    in selection and tags77_leadjet+tags77_subljet != 3: accept = False
+        if  "4tag77"    in selection and tags77_leadjet+tags77_subljet != 4: accept = False
+        if  "4tag90"    in selection and tags90_leadjet+tags90_subljet != 4: accept = False
+        if "N4tag90"    in selection and tags90_leadjet+tags90_subljet == 4: accept = False
+        if  "4tag97"    in selection and tags97_leadjet+tags97_subljet != 4: accept = False
+        if "N4tag97"    in selection and tags97_leadjet+tags97_subljet == 4: accept = False
 
         if not accept:
             continue
@@ -156,12 +162,16 @@ def hist(config):
         # histogramming
         hists["m_jj"].Fill((jet0+jet1).M()/GeV, weight)
 
-        hists["j0_pt"  ].Fill(jet0.Pt()/GeV,  weight)
-        hists["j0_eta" ].Fill(jet0.Eta(),     weight)
-        hists["j0_phi" ].Fill(jet0.Phi(),     weight)
-        hists["j0_m"   ].Fill(jet0.M()/GeV,   weight)
-        hists["j0_nb77"].Fill(tags77_leadjet, weight)
-        hists["j0_nb90"].Fill(tags90_leadjet, weight)
+        hists["j0_pt"   ].Fill(jet0.Pt()/GeV,  weight)
+        hists["j0_eta"  ].Fill(jet0.Eta(),     weight)
+        hists["j0_phi"  ].Fill(jet0.Phi(),     weight)
+        hists["j0_m"    ].Fill(jet0.M()/GeV,   weight)
+        hists["j0_nb77" ].Fill(tags77_leadjet, weight)
+        hists["j0_nb90" ].Fill(tags90_leadjet, weight)
+        hists["j0_mv2_0"].Fill(jet_ak2_00_mv2, weight)
+        hists["j0_mv2_1"].Fill(jet_ak2_01_mv2, weight)
+        hists["j0_mv2"  ].Fill(jet_ak2_00_mv2,
+                               jet_ak2_01_mv2, weight)
 
         hists["j1_pt" ].Fill(jet1.Pt()/GeV,   weight)
         hists["j1_eta"].Fill(jet1.Eta(),      weight)
@@ -169,6 +179,10 @@ def hist(config):
         hists["j1_m"  ].Fill(jet1.M()/GeV,    weight)
         hists["j1_nb77"].Fill(tags77_subljet, weight)
         hists["j1_nb90"].Fill(tags90_subljet, weight)
+        hists["j1_mv2_0"].Fill(jet_ak2_10_mv2, weight)
+        hists["j1_mv2_1"].Fill(jet_ak2_11_mv2, weight)
+        hists["j1_mv2"  ].Fill(jet_ak2_10_mv2,
+                               jet_ak2_11_mv2, weight)
 
         hists["j0_m_vs_j1_m"].Fill(jet0.M()/GeV, jet1.M()/GeV, weight)
         
@@ -231,19 +245,26 @@ def initialize_histograms():
     hists = {}
     hists["m_jj"]   = ROOT.TH1F("m_JJ", ";m(JJ) [GeV];entries",        200, 0, 2000)
 
-    hists["j0_pt"]   = ROOT.TH1F("j0_pt",   ";pt(lead J) [GeV];entries",   120,  200, 800)
-    hists["j0_eta"]  = ROOT.TH1F("j0_eta",  ";eta(lead J);entries",        120, -3.0, 3.0)
-    hists["j0_phi"]  = ROOT.TH1F("j0_phi",  ";phi(lead J);entries",        120, -3.2, 3.2)
-    hists["j0_m"]    = ROOT.TH1F("j0_m",    ";m(lead J) [GeV];entries",    120,   40, 400)
-    hists["j0_nb77"] = ROOT.TH1F("j0_nb77", ";Nb77(lead J) [GeV];entries",   3, -0.5, 2.5)
-    hists["j0_nb90"] = ROOT.TH1F("j0_nb90", ";Nb90(lead J) [GeV];entries",   3, -0.5, 2.5)
+    hists["j0_pt"]    = ROOT.TH1F("j0_pt",    ";pt(lead J) [GeV];entries",    120,  200,  800)
+    hists["j0_eta"]   = ROOT.TH1F("j0_eta",   ";eta(lead J);entries",         120, -3.0,  3.0)
+    hists["j0_phi"]   = ROOT.TH1F("j0_phi",   ";phi(lead J);entries",         120, -3.2,  3.2)
+    hists["j0_m"]     = ROOT.TH1F("j0_m",     ";m(lead J) [GeV];entries",     120,   40,  400)
+    hists["j0_nb77"]  = ROOT.TH1F("j0_nb77",  ";Nb77(lead J) [GeV];entries",    3, -0.5,  2.5)
+    hists["j0_nb90"]  = ROOT.TH1F("j0_nb90",  ";Nb90(lead J) [GeV];entries",    3, -0.5,  2.5)
+    hists["j0_mv2_0"] = ROOT.TH1F("j0_mv2_0", ";mv2(lead J,0);entries",       100, -1.0, -0.6)
+    hists["j0_mv2_1"] = ROOT.TH1F("j0_mv2_1", ";mv2(lead J,1);entries",       100, -1.0, -0.6)
 
-    hists["j1_pt"]   = ROOT.TH1F("j1_pt",   ";pt(subl J) [GeV];entries",   120,  200, 800)
-    hists["j1_eta"]  = ROOT.TH1F("j1_eta",  ";eta(subl J);entries",        120, -3.0, 3.0)
-    hists["j1_phi"]  = ROOT.TH1F("j1_phi",  ";phi(subl J);entries",        120, -3.2, 3.2)
-    hists["j1_m"]    = ROOT.TH1F("j1_m",    ";m(subl J) [GeV];entries",    120,   40, 400)
-    hists["j1_nb77"] = ROOT.TH1F("j1_nb77", ";Nb77(subl J) [GeV];entries",   3, -0.5, 2.5)
-    hists["j1_nb90"] = ROOT.TH1F("j1_nb90", ";Nb90(subl J) [GeV];entries",   3, -0.5, 2.5)
+    hists["j1_pt"]    = ROOT.TH1F("j1_pt",    ";pt(subl J) [GeV];entries",   120,  200,  800)
+    hists["j1_eta"]   = ROOT.TH1F("j1_eta",   ";eta(subl J);entries",        120, -3.0,  3.0)
+    hists["j1_phi"]   = ROOT.TH1F("j1_phi",   ";phi(subl J);entries",        120, -3.2,  3.2)
+    hists["j1_m"]     = ROOT.TH1F("j1_m",     ";m(subl J) [GeV];entries",    120,   40,  400)
+    hists["j1_nb77"]  = ROOT.TH1F("j1_nb77",  ";Nb77(subl J) [GeV];entries",   3, -0.5,  2.5)
+    hists["j1_nb90"]  = ROOT.TH1F("j1_nb90",  ";Nb90(subl J) [GeV];entries",   3, -0.5,  2.5)
+    hists["j1_mv2_0"] = ROOT.TH1F("j1_mv2_0", ";mv2(subl J,0);entries",      100, -1.0, -0.6)
+    hists["j1_mv2_1"] = ROOT.TH1F("j1_mv2_1", ";mv2(subl J,1);entries",      100, -1.0, -0.6)
+
+    hists["j0_mv2"] = ROOT.TH2F("j0_mv2", ";mv2(lead J,0);mv2(lead J,1);entries", 100, -1.0, -0.6, 100, -1.0, -0.6)
+    hists["j1_mv2"] = ROOT.TH2F("j1_mv2", ";mv2(subl J,0);mv2(subl J,1);entries", 100, -1.0, -0.6, 100, -1.0, -0.6)
 
     hists["j0_m_vs_j1_m"] = ROOT.TH2F("j0_m_vs_j1_m", ";m(lead J) [GeV];m(subl J) [GeV];entries", 60, 40, 400, 60, 40, 400)
 
@@ -275,6 +296,7 @@ def mv2(wp):
     if wp == 77: return -0.6134
     if wp == 85: return -0.8433
     if wp == 90: return -0.9291
+    if wp == 97: return -0.9700
 
 def count_tags(tree, jet, wp):
     tags = 0
