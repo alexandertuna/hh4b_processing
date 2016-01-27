@@ -8,8 +8,10 @@ def main():
 
     data_file  = ROOT.TFile.Open("hist/data15_13TeV/hadd.root")
     ttbar_file = ROOT.TFile.Open("hist/mc15_13TeV.410007.ttbar_allhad/hadd.root")
-
-    outfile = ROOT.TFile.Open("qcd.root", "recreate")
+    
+    if not os.path.isdir("hist/qcd"):
+        os.makedirs("hist/qcd")
+    outfile = ROOT.TFile.Open("hist/qcd/qcd.root", "recreate")
 
     for fullpath, dirnames, objnames, _ in walk.walk(data_file):
 
