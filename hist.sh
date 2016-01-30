@@ -1,8 +1,11 @@
-for sel in "sb_2tag77" "sb_2tag77_4tag97" "sb_2tag77_N4tag97"; do
+for mass in "sb_" "cr_" "sr_"; do
+    for tag in "2tag77" "2tag77_4tag97" "2tag77_N4tag97" "3tag77" "4tag77"; do
 
-    python hist.py --input=skim/mc15_13TeV.410007.*/*.root*   --output=hist/${sel}/mc15_13TeV.410007.ttbar_allhad --filesperjob=1 --selection=${sel}
-    python hist.py --input=skim/data15_13TeV.period*/*.root*  --output=hist/${sel}/data15_13TeV                   --filesperjob=3 --selection=${sel}
+        sel=${mass}${tag}
+        python hist.py --input=skim/mc15_13TeV.410007.*/*.root*   --output=hist/${sel}/mc15_13TeV.410007.ttbar_allhad --filesperjob=1 --selection=${sel}
+        python hist.py --input=skim/data15_13TeV.period*/*.root*  --output=hist/${sel}/data15_13TeV                   --filesperjob=3 --selection=${sel}
 
+    done
 done
 
 mkdir hist/data15_13TeV/

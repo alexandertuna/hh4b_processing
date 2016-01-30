@@ -127,9 +127,9 @@ def hist(config):
         for imu in xrange(tree.nmuon):
 
             # NB: stored in GeV
-            if tree.muon_pt[imu] < 4:         continue
-            if abs(tree.muon_eta[imu]) > 2.5: continue
-            if not tree.muon_isMedium[imu]:   continue
+            if tree.muon_pt[imu] < 4:                                   continue
+            if abs(tree.muon_eta[imu]) > 2.5:                           continue
+            if not (tree.muon_isMedium[imu] or tree.muon_isTight[imu]): continue
 
             # back to MeV
             muon_pt, muon_eta, muon_phi, muon_m = tree.muon_pt[imu]*GeV, tree.muon_eta[imu], tree.muon_phi[imu], tree.muon_m[imu]*GeV
@@ -255,11 +255,12 @@ def lumi_scaling(channel, target_lumi=3230.0):
 def initialize_histograms():
 
     hists = {}
-    hists["m_jj"]   = ROOT.TH1F("m_JJ", ";m(JJ) [GeV];entries",        200, 0, 2000)
+    hists["m_jj"]   = ROOT.TH1F("m_JJ",  ";m(JJ) [GeV];entries",        200, 400, 2400)
+    hists["dr_jj"]  = ROOT.TH1F("dr_JJ", ";dR(JJ) [GeV];entries",       120, 1.2,  4.8)
 
-    hists["j0_pt"]    = ROOT.TH1F("j0_pt",    ";pt(lead J) [GeV];entries",    120,  200,  800)
+    hists["j0_pt"]    = ROOT.TH1F("j0_pt",    ";pt(lead J) [GeV];entries",    120,  300,  900)
     hists["j0_eta"]   = ROOT.TH1F("j0_eta",   ";eta(lead J);entries",         120, -3.0,  3.0)
-    hists["j0_phi"]   = ROOT.TH1F("j0_phi",   ";phi(lead J);entries",         120, -3.2,  3.2)
+    hists["j0_phi"]   = ROOT.TH1F("j0_phi",   ";phi(lead J);entries",         120, -3.6,  3.6)
     hists["j0_m"]     = ROOT.TH1F("j0_m",     ";m(lead J) [GeV];entries",     120,   40,  400)
     hists["j0_nb77"]  = ROOT.TH1F("j0_nb77",  ";Nb77(lead J) [GeV];entries",    3, -0.5,  2.5)
     hists["j0_nb90"]  = ROOT.TH1F("j0_nb90",  ";Nb90(lead J) [GeV];entries",    3, -0.5,  2.5)
@@ -268,7 +269,7 @@ def initialize_histograms():
 
     hists["j1_pt"]    = ROOT.TH1F("j1_pt",    ";pt(subl J) [GeV];entries",   120,  200,  800)
     hists["j1_eta"]   = ROOT.TH1F("j1_eta",   ";eta(subl J);entries",        120, -3.0,  3.0)
-    hists["j1_phi"]   = ROOT.TH1F("j1_phi",   ";phi(subl J);entries",        120, -3.2,  3.2)
+    hists["j1_phi"]   = ROOT.TH1F("j1_phi",   ";phi(subl J);entries",        120, -3.6,  3.6)
     hists["j1_m"]     = ROOT.TH1F("j1_m",     ";m(subl J) [GeV];entries",    120,   40,  400)
     hists["j1_nb77"]  = ROOT.TH1F("j1_nb77",  ";Nb77(subl J) [GeV];entries",   3, -0.5,  2.5)
     hists["j1_nb90"]  = ROOT.TH1F("j1_nb90",  ";Nb90(subl J) [GeV];entries",   3, -0.5,  2.5)
